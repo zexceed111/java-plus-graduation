@@ -1,20 +1,31 @@
 spring:
   application:
     name: user-service
+
   config:
-    import: "configserver:"
+    #"optional:" на время локальной отладки, чтобы сервис не падал, пока не поднялся config-server
+    import: "optional:configserver:"
+
   cloud:
     config:
       discovery:
         enabled: true
         service-id: config-server
+      # на CI/проде можете включить fail-fast, чтобы падать, если конфиг недоступен
+      # fail-fast: true
+      # при необходимости:
+      # label: main           # ветка репозитория с конфигами
+      # profile: default      # профиль, если нужен не default
 
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://${eureka.instance.hostname:localhost}:${eureka.instance.port:8761}/eureka/
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+    # ждать появления реестра перед попыткой пойти за конфигом
+    # eureka-service-url-poll-interval-seconds: 5
+
   instance:
     instance-id: ${spring.application.name}:${random.value}
     prefer-ip-address: true
-    register-with-eureka: true
-    fetch-registry: true
