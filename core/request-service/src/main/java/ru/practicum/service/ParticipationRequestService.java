@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.aop.ClientErrorHandler;
+import ru.practicum.client.CollectorClient;
 import ru.practicum.client.EventClient;
 import ru.practicum.client.UserClient;
 import ru.practicum.dto.event.EventFullDto;
@@ -13,6 +14,8 @@ import ru.practicum.dto.request.EventRequestStatusUpdateResult;
 import ru.practicum.dto.request.ParticipationRequestDto;
 import ru.practicum.dto.request.RequestStatus;
 import ru.practicum.entity.ParticipationRequest;
+import ru.practicum.ewm.stats.proto.ActionTypeProto;
+import ru.practicum.ewm.stats.proto.UserActionProto;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.ParticipationRequestMapper;
@@ -31,6 +34,7 @@ public class ParticipationRequestService {
     private final ParticipationRequestRepository requestRepository;
     private final EventClient eventClient;
     private final UserClient userClient;
+    private final CollectorClient collectorClient;
 
     private final ParticipationRequestMapper requestMapper;
 
@@ -59,7 +63,6 @@ public class ParticipationRequestService {
     @ClientErrorHandler
     public ParticipationRequestDto createRequest(Long userId, Long eventId) {
         userClient.getUserById(userId);
-
         EventFullDto event = eventClient.getEventById(eventId);
 
         if (event.getInitiator().getId().equals(userId)) {
@@ -71,23 +74,30 @@ public class ParticipationRequestService {
         }
 
         if (event.getParticipantLimit() != 0 &&
-            requestRepository.countByEventAndStatus(eventId, RequestStatus.CONFIRMED) >= event.getParticipantLimit()) {
+                requestRepository.countByEventAndStatus(eventId, RequestStatus.CONFIRMED) >= event.getParticipantLimit()) {
             throw new ConflictException("Event participant limit reached");
         }
 
         ParticipationRequest request = new ParticipationRequest();
         request.setRequester(userId);
         request.setEvent(eventId);
+        request.setCreated(LocalDateTime.now());
 
         if (event.getParticipantLimit() == 0) {
             request.setStatus(RequestStatus.CONFIRMED);
         } else {
             request.setStatus(event.getRequestModeration() ? RequestStatus.PENDING : RequestStatus.CONFIRMED);
         }
-        request.setCreated(LocalDateTime.now());
+
+        collectorClient.collectUserAction(UserActionProto.newBuilder()
+                .setUserId(userId)
+                .setEventId(eventId)
+                .setActionType(ActionTypeProto.ACTION_REGISTER)
+                .build());
 
         return requestMapper.toDto(requestRepository.save(request));
     }
+
 
     @Transactional
     @ClientErrorHandler

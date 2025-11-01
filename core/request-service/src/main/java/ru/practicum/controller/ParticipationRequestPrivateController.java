@@ -19,7 +19,6 @@ import java.util.List;
 public class ParticipationRequestPrivateController {
 
     private final ParticipationRequestService requestService;
-    private final CollectorClient collectorClient;
 
     @GetMapping
     public List<ParticipationRequestDto> getRequests(@PathVariable Long userId) {
@@ -30,11 +29,6 @@ public class ParticipationRequestPrivateController {
     @ResponseStatus(HttpStatus.CREATED)
     public ParticipationRequestDto createRequest(@PathVariable Long userId,
                                                  @RequestParam Long eventId) {
-        collectorClient.collectUserAction(UserActionProto.newBuilder()
-                .setUserId(userId)
-                .setEventId(eventId)
-                .setActionType(ActionTypeProto.ACTION_REGISTER)
-                .build());
         return requestService.createRequest(userId, eventId);
     }
 
