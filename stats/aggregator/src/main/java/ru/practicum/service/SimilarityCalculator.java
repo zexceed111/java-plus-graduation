@@ -40,21 +40,22 @@ public class SimilarityCalculator {
         double newWeight = getWeight(userActionAvro.getType());
 
         Map<Long, Double> userWeights = eventToUserToMaxWeight.get(eventId);
-        Double oldWeight = userWeights != null ? userWeights.get(userId) : null;
+        Double oldWeight = (userWeights != null) ? userWeights.get(userId) : null;
 
-        if (oldWeight == null || newWeight > oldWeight) {
-            // обновляем базовые структуры
-            updateBasicStructures(userId, eventId, newWeight, oldWeight);
-
-            // вычисляем similarity для случаев если событие новое или уже есть в мапах
-            if (oldWeight == null) {
-                return similarityForNewEvent(userId, eventId, newWeight);
-            } else {
-                return similarityForOldEvent(userId, eventId, newWeight, oldWeight);
-            }
-        } else {
-            return Collections.emptyList();
+        //Ранний выход — если новое действие не сильнее старого
+        if (oldWeight != null && newWeight <= oldWeight) {
+            return List.of();
         }
+
+        //Обновляем внутренние структуры
+        updateBasicStructures(userId, eventId, newWeight, oldWeight);
+
+        //Разделяем случаи — новое событие или обновление существующего
+        if (oldWeight == null) {
+            return similarityForNewEvent(userId, eventId, newWeight);
+        }
+
+        return similarityForOldEvent(userId, eventId, newWeight, oldWeight);
     }
 
     private void updateBasicStructures(long userId, long eventId, double newWeight, Double oldWeight) {
