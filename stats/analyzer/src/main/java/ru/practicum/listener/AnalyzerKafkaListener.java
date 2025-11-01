@@ -22,7 +22,7 @@ public class AnalyzerKafkaListener {
             topics = "${topic.user-actions}",
             containerFactory = "userActionAvroConcurrentKafkaListenerContainerFactory")
     public void handleUserActions(UserActionAvro userActionAvro) {
-        log.info("Handle user action {}", userActionAvro);
+        log.debug("Handle user action {}", userActionAvro);
         userActionService.saveUserAction(userActionAvro);
     }
 
