@@ -17,10 +17,12 @@
 		<module>infra/discovery-server</module>
 		<module>infra/gateway-server</module>
 		<module>stats</module>
-		<module>stats/stats-server</module>
-		<module>stats/stats-dto</module>
 		<module>stats/stats-client</module>
 		<module>core</module>
+		<module>stats/collector</module>
+		<module>stats/aggregator</module>
+		<module>stats/analyzer</module>
+		<module>stats/serialization</module>
 	</modules>
 
 	<groupId>ru.practicum</groupId>
@@ -53,6 +55,12 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>net.devh</groupId>
+				<artifactId>grpc-client-spring-boot-starter</artifactId>
+				<version>${grpc-spring-boot-starter.version}</version>
+			</dependency>
+
 			<dependency>
 				<groupId>org.projectlombok</groupId>
 				<artifactId>lombok</artifactId>
